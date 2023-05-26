@@ -6,91 +6,109 @@
 
 typedef struct emufs_table_entry
 {
+    uint8_t file_name[10];
     uint16_t file_offset;
     uint16_t file_size;
 } emufs_table_entry;
 
 uint16_t BOOT_SECTOR_SIZE = 512;
-uint16_t EMUFS_TABLE_SIZE = 1024;
+uint16_t EMUFS_TABLE_SIZE = 4096;
 
-emufs_table_entry emufs_table[256];
+emufs_table_entry *g_table = NULL;
 
 int main(int argc, char **argv)
 {
+    int8_t ret_val = 0;
+    uint32_t emufs_table_entry_size = (uint32_t)sizeof(emufs_table_entry);
+
     if (argc < 3)
     {
         printf("Usage: copy <disk_image> <file_path>.\n");
-        return -1;
+        ret_val = -1;
+
+        goto shutdown;
     }
 
+    // Open the image disk for reading / writing.
     FILE *img = fopen(argv[1], "rb+");
     if (!img)
     {
-        printf("Could not image %s for reading.\n", argv[1]);
-        return -2;
+        printf("Could not image %s for reading/writing.\n", argv[1]);
+        ret_val = -1;
+        goto shutdown;
     }
 
+    FILE *file_to_copy = fopen(argv[2], "rb");
+    if (!file_to_copy)
+    {
+        printf("Could not open file %s for copying.\n", argv[2]);
+        ret_val = -2;
+        goto shutdown;
+    }
+
+    uint32_t emufs_table_entry_count = EMUFS_TABLE_SIZE / emufs_table_entry_size;
+
+    g_table = (emufs_table_entry *)malloc(emufs_table_entry_count * emufs_table_entry_size);
+
+    // Get all the table entries
     fseek(img, BOOT_SECTOR_SIZE, SEEK_SET);
-    fread(&emufs_table, sizeof(emufs_table_entry), 256, img);
-    if (!img)
-    {
-        printf("Could not open image %s for writing.\n", argv[1]);
-        return -3;
-    }
+    fread(g_table, emufs_table_entry_size, emufs_table_entry_count, img);
 
-    FILE *file_to_read = fopen(argv[2], "rb");
-    if (!file_to_read)
-    {
-        printf("Could not file %s for reading.\n", argv[2]);
-        return -4;
-    }
-
-    fseek(file_to_read, 0, SEEK_END);
-    uint32_t file_size = ftell(file_to_read);
-    rewind(file_to_read);
-
-    uint32_t offset = BOOT_SECTOR_SIZE + EMUFS_TABLE_SIZE;
+    // Calculate the offset from the start of the img where the file data will be copied to
+    uint16_t file_offset = BOOT_SECTOR_SIZE + EMUFS_TABLE_SIZE;
     uint32_t entry_idx = 0;
-    for (entry_idx = 0; entry_idx < 256; ++entry_idx)
+    for (entry_idx = 0; entry_idx < emufs_table_entry_count; ++entry_idx)
     {
-        if (emufs_table[entry_idx].file_size == 0)
+        if (g_table[entry_idx].file_size == 0)
         {
             break;
         }
 
-        offset += emufs_table[entry_idx].file_size;
+        file_offset += g_table[entry_idx].file_size;
     }
 
-    // Write updated table to img
-    fseek(img, BOOT_SECTOR_SIZE + (entry_idx * sizeof(emufs_table_entry)), SEEK_SET);
+    // Get the size of the file to copy
+    fseek(file_to_copy, 0, SEEK_END);
+    uint32_t file_size = ftell(file_to_copy);
+    rewind(file_to_copy);
+
+    // Update the table in the img file
     emufs_table_entry new_entry = {
-        .file_offset = offset,
-        .file_size = file_size + 10,
+        .file_offset = file_offset,
+        .file_size = file_size,
     };
 
-    fwrite(&new_entry, sizeof(emufs_table_entry), 1, img);
-
-    // Read the file
-    uint8_t *file_data = (uint8_t *)malloc(sizeof(uint8_t) * file_size);
-
-    fread(file_data, file_size, 1, file_to_read);
-    fclose(file_to_read);
-
-    // Write the file name at the offset
+    // extract the file name from the full path
     char *filename = NULL;
-    char* token = strtok(argv[2], "/");
+    char *tokens = strtok(argv[2], "/");
 
-    while (token != NULL)
+    while (tokens != NULL)
     {
-        filename = token;
-        token = strtok(NULL, "/");
+        filename = tokens;
+        tokens = strtok(NULL, "/");
     }
 
-    fseek(img, offset, SEEK_SET);
-    fwrite(filename, 10, 1, img);
+    memcpy(new_entry.file_name, filename, 10);
 
-    // Write file data to the image
-    fwrite(file_data, file_size, 1, img);
+    // Write the new entry to file
+    fseek(img, BOOT_SECTOR_SIZE + (emufs_table_entry_size * entry_idx), SEEK_SET);
+    fwrite(&new_entry, emufs_table_entry_size, 1, img);
+
+    // Read the data to be copied
+    uint8_t *file_data = (uint8_t *)malloc(sizeof(uint8_t) * file_size);
+    fseek(file_to_copy, 0, SEEK_SET);
+    fread(file_data, sizeof(uint8_t), file_size, file_to_copy);
+
+    // Write the file data to the offset in the img file
+    fseek(img, file_offset, SEEK_SET);
+    fwrite(file_data, sizeof(uint8_t), file_size, img);
+
+shutdown:
+    if (g_table)
+    {
+        free(g_table);
+        g_table = NULL;
+    }
 
     if (file_data)
     {
@@ -99,6 +117,7 @@ int main(int argc, char **argv)
     }
 
     fclose(img);
+    fclose(file_to_copy);
 
-    return 0;
+    return ret_val;
 }

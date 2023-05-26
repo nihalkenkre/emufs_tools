@@ -24,7 +24,7 @@ test: $(TEST_BUILD)/read
 $(TEST_BUILD)/read: test-always
 	$(CC) -g $(TEST_SRC)/read.c -o $(TEST_BUILD)/read
 
-always:
+always: copy-always test-always
 	mkdir -p build
 
 copy-always:
@@ -43,5 +43,3 @@ clean-copy:
 
 clean-test:
 	rm -fr $(TEST_BUILD)/*
-
-	
