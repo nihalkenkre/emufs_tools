@@ -72,10 +72,13 @@ int main(int argc, char **argv)
     uint32_t file_size = ftell(file_to_copy);
     rewind(file_to_copy);
 
+    // Get the padding bytes upto the next 512 byte sector
+    uint32_t diff_byte_count = 512 - (file_size % 512);
+
     // Update the table in the img file
     emufs_table_entry new_entry = {
         .file_offset = file_offset,
-        .file_size = file_size,
+        .file_size = file_size + diff_byte_count,
     };
 
     // extract the file name from the full path
@@ -103,6 +106,12 @@ int main(int argc, char **argv)
     // Write the file data to the offset in the img file
     fseek(img, file_offset, SEEK_SET);
     fwrite(file_data, sizeof(uint8_t), file_size, img);
+
+    // Write the padding bytes upto the next 512 byte sector
+    uint8_t* zeros = (uint8_t*) calloc(sizeof(uint8_t), diff_byte_count);
+    fwrite (zeros, sizeof(uint8_t), diff_byte_count, img);
+    free (zeros);
+    zeros = NULL;
 
 shutdown:
     if (g_table)
