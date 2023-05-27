@@ -12,7 +12,7 @@ typedef struct emufs_table_entry
 } emufs_table_entry;
 
 uint16_t BOOT_SECTOR_SIZE = 512;
-uint16_t EMUFS_TABLE_SIZE = 4096;
+uint16_t EMUFS_TABLE_SIZE = 512;
 
 emufs_table_entry *g_table = NULL;
 
@@ -88,6 +88,7 @@ int main(int argc, char **argv)
         tokens = strtok(NULL, "/");
     }
 
+    // Copy upto 10 bytes from the filename
     memcpy(new_entry.file_name, filename, 10);
 
     // Write the new entry to file
