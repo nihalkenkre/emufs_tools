@@ -13,6 +13,7 @@ typedef struct emufs_table_entry
 
 uint16_t BOOT_SECTOR_SIZE = 512;
 uint16_t EMUFS_TABLE_SIZE = 512;
+uint16_t PADDING_BOUNDARY = 512;
 
 emufs_table_entry *g_table = NULL;
 
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
     rewind(file_to_copy);
 
     // Get the padding bytes upto the next 512 byte sector
-    uint32_t diff_byte_count = 512 - (file_size % 512);
+    uint32_t diff_byte_count = PADDING_BOUNDARY - (file_size % PADDING_BOUNDARY);
 
     // Update the table in the img file
     emufs_table_entry new_entry = {
