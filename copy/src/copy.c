@@ -56,7 +56,7 @@ int main(int argc, char **argv)
     fread(g_table, emufs_table_entry_size, emufs_table_entry_count, img);
 
     // Calculate the offset from the start of the img where the file data will be copied to
-    uint16_t file_offset = BOOT_SECTOR_SIZE + EMUFS_TABLE_SIZE;
+    uint32_t file_offset = BOOT_SECTOR_SIZE + EMUFS_TABLE_SIZE;
     uint32_t entry_idx = 0;
     for (entry_idx = 0; entry_idx < emufs_table_entry_count; ++entry_idx)
     {
