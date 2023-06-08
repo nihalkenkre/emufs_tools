@@ -7,8 +7,8 @@
 typedef struct emufs_table_entry
 {
     uint8_t file_name[10];
-    uint16_t file_offset;
-    uint16_t file_size;
+    uint32_t file_offset;
+    uint32_t file_size;
 } emufs_table_entry;
 
 uint16_t BOOT_SECTOR_SIZE = 512;
