@@ -9,7 +9,7 @@ typedef struct emufs_table_entry
     uint8_t file_name[10];
     uint32_t file_offset;
     uint32_t file_size;
-} emufs_table_entry;
+} __attribute__((packed)) emufs_table_entry;
 
 uint16_t BOOT_SECTOR_SIZE = 512;
 uint16_t EMUFS_TABLE_SIZE = 512;
@@ -109,9 +109,9 @@ int main(int argc, char **argv)
     fwrite(file_data, sizeof(uint8_t), file_size, img);
 
     // Write the padding bytes upto the next 512 byte sector
-    uint8_t* zeros = (uint8_t*) calloc(sizeof(uint8_t), diff_byte_count);
-    fwrite (zeros, sizeof(uint8_t), diff_byte_count, img);
-    free (zeros);
+    uint8_t *zeros = (uint8_t *)calloc(sizeof(uint8_t), diff_byte_count);
+    fwrite(zeros, sizeof(uint8_t), diff_byte_count, img);
+    free(zeros);
     zeros = NULL;
 
 shutdown:

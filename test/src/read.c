@@ -50,6 +50,8 @@ int main(int argc, char **argv)
         printf("file size: %u\n", g_table[idx].file_size);
     }
 
+    printf("End of table entries\n");
+
 shutdown:
     fclose(disk);
 
