@@ -74,7 +74,11 @@ int main(int argc, char **argv)
     rewind(file_to_copy);
 
     // Get the padding bytes upto the next 512 byte sector
-    uint32_t diff_byte_count = PADDING_BOUNDARY - (file_size % PADDING_BOUNDARY);
+    uint32_t diff_byte_count = (file_size % PADDING_BOUNDARY);
+    if (diff_byte_count > 0)
+    {
+        diff_byte_count = PADDING_BOUNDARY - diff_byte_count;
+    }
 
     // Update the table in the img file
     emufs_table_entry new_entry = {
