@@ -17,7 +17,7 @@ emufs_table_entry *g_table = NULL;
 
 int main(int argc, char **argv)
 {
-    printf("Attempting to read from an emu fs disk\n");
+    printf("Attempting to read from an Emu FS disk\n");
 
     int8_t ret_val = 0;
 
@@ -38,8 +38,13 @@ int main(int argc, char **argv)
     fseek(disk, BOOT_SECTOR_SIZE, SEEK_SET);
     fread(g_table, BOOT_SECTOR_SIZE, 1, disk);
 
-    for (uint32_t idx = 0; idx < 6; ++idx)
+    for (uint32_t idx = 0; idx < EMUFS_TABLE_SIZE / sizeof(emufs_table_entry); ++idx)
     {
+        if (g_table[idx].file_size == 0)
+            break;
+
+        printf("==============\n");
+
         printf("filename: %s\n", g_table[idx].file_name);
         printf("file offset: %u\n", g_table[idx].file_offset);
         printf("file size: %u\n", g_table[idx].file_size);
