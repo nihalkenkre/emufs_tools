@@ -39,6 +39,7 @@ int main(int argc, char **argv)
         goto shutdown;
     }
 
+    // Open the file whose data has to be copied to the img
     FILE *file_to_copy = fopen(argv[2], "rb");
     if (!file_to_copy)
     {
@@ -47,9 +48,10 @@ int main(int argc, char **argv)
         goto shutdown;
     }
 
+    // Get table entry count and allocate memory
     uint32_t emufs_table_entry_count = EMUFS_TABLE_SIZE / emufs_table_entry_size;
 
-    g_table = (emufs_table_entry *)malloc(emufs_table_entry_count * emufs_table_entry_size);
+    g_table = (emufs_table_entry *)calloc(emufs_table_entry_count, emufs_table_entry_size);
 
     // Get all the table entries
     fseek(img, BOOT_SECTOR_SIZE, SEEK_SET);
