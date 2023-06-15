@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdlib.h>
 
 typedef struct emufs_table_entry
@@ -14,29 +13,32 @@ uint16_t BOOT_SECTOR_SIZE = 512;
 uint16_t EMUFS_TABLE_SIZE = 512;
 
 emufs_table_entry *g_table = NULL;
-
 int main(int argc, char **argv)
 {
-    printf("Attempting to read from an Emu FS disk\n");
-
-    int8_t ret_val = 0;
+    int8_t retval = 0;
 
     if (argc < 2)
     {
-        printf("Usage: read <disk_image>.\n");
-        ret_val = -1;
+        printf("Usage: emufs_dir <disk_name>.\n");
+        retval = -1;
 
         goto shutdown;
     }
 
-    // allocate space for emufs table
     g_table = (emufs_table_entry *)calloc(1, EMUFS_TABLE_SIZE);
 
-    FILE *disk = fopen(argv[1], "rb");
+    FILE *img = fopen(argv[1], "rb");
 
-    // look for the end of the boot sector
-    fseek(disk, BOOT_SECTOR_SIZE, SEEK_SET);
-    fread(g_table, EMUFS_TABLE_SIZE, 1, disk);
+    if (!img)
+    {
+        printf("Could not open disk image for reading.\n");
+        retval = -2;
+
+        goto shutdown;
+    }
+
+    fseek(img, BOOT_SECTOR_SIZE, SEEK_SET);
+    fread(g_table, EMUFS_TABLE_SIZE, 1, img);
 
     for (uint32_t idx = 0; idx < EMUFS_TABLE_SIZE / sizeof(emufs_table_entry); ++idx)
     {
@@ -53,13 +55,16 @@ int main(int argc, char **argv)
     printf("End of table entries\n");
 
 shutdown:
-    fclose(disk);
+    if (img)
+    {
+        fclose(img);
+    }
 
-    if (g_table)
+    if (g_table != NULL)
     {
         free(g_table);
         g_table = NULL;
     }
 
-    return ret_val;
+    return retval;
 }
