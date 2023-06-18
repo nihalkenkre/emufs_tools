@@ -33,7 +33,7 @@ test: $(TEST_BUILD)/read
 $(TEST_BUILD)/read: test-always
 	$(CC) -g $(TEST_SRC)/read.c -o $(TEST_BUILD)/read
 
-always: copy-always test-always
+always: copy-always dir-always test-always
 	mkdir -p build
 
 copy-always:
